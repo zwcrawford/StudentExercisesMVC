@@ -6,18 +6,14 @@ using System.Threading.Tasks;
 
 namespace StudentExercisesMVC.Models
 {
-	public class Exercise
+	public class StudentExercises
 	{
 		public int Id { get; set; }
 
 		[Required]
-		[StringLength(10, MinimumLength = 3)]
-		public string Name { get; set; }
+		public int StudentId { get; set; }
 
 		[Required]
-		[StringLength(10, MinimumLength = 3)]
-		public string Language { get; set; }
-
-		public List<Student> Students { get; set; } = new List<Student>();
+		public int ExerciseId { get; set; }
 	}
 }

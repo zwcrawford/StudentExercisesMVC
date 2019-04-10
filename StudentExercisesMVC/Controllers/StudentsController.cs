@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using StudentExercisesMVC.Models;
+//using StudentExercisesMVC.Models.ViewModels;
 
 
 namespace StudentExercisesMVC.Controllers
@@ -38,8 +39,10 @@ namespace StudentExercisesMVC.Controllers
                 {
                     cmd.CommandText =
                     @"
-                        SELECT s.Id AS StudentId, s.FirstName, s.LastName, s.SlackHandle, s.CohortId
-                        FROM Student s";
+                        SELECT s.Id AS StudentId, s.FirstName, s.LastName, s.SlackHandle, s.CohortId,
+							   c.Name AS CohortName
+                        FROM Student s
+								LEFT JOIN Cohort c ON s.CohortId = c.Id";
                     
                     SqlDataReader reader = cmd.ExecuteReader();
                     List<Student> students = new List<Student>();
@@ -48,12 +51,17 @@ namespace StudentExercisesMVC.Controllers
                     {
                         Student student = new Student
                         {
-                            Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                            Id = reader.GetInt32(reader.GetOrdinal("StudentId")),
                             FirstName = reader.GetString(reader.GetOrdinal("FirstName")),
                             LastName = reader.GetString(reader.GetOrdinal("LastName")),
                             SlackHandle = reader.GetString(reader.GetOrdinal("SlackHandle")),
-                            CohortId = reader.GetInt32(reader.GetOrdinal("CohortId"))  
-                        }; 
+                            CohortId = reader.GetInt32(reader.GetOrdinal("CohortId")),
+							Cohort = new Cohort
+							{
+								Id = reader.GetInt32(reader.GetOrdinal("CohortId")),
+								Name = reader.GetString(reader.GetOrdinal("CohortName"))
+							}
+						}; 
                         students.Add(student);
                     }
                     reader.Close();
@@ -61,7 +69,7 @@ namespace StudentExercisesMVC.Controllers
                 } 
             }   
         }
-
+		
         // GET STUDENT/DETAILS/{id}
         public ActionResult Details(int id)
         {
@@ -71,15 +79,16 @@ namespace StudentExercisesMVC.Controllers
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
                     cmd.CommandText =
-                    @"
-                        SELECT s.Id AS StudentId, s.FirstName, s.LastName, s.SlackHandle, s.CohortId,
+					@"
+                        SELECT s.Id, s.FirstName, s.LastName, s.SlackHandle, s.CohortId,
                                c.[Name] AS CohortName, e.Id AS ExerciseId, e.[Name] AS ExerciseName,
                                e.[Language]
                           FROM Student s
                                  LEFT JOIN Cohort c ON s.CohortId = c.Id
-                                 LEFT JOIN StudentExercise se ON se.ExerciseId = e.Id
+                                 LEFT JOIN StudentExercise se ON s.Id = se.StudentId
+								 LEFT JOIN Exercise e on se.exerciseId = se.Id
                          WHERE s.Id = @id";
-                    cmd.Parameters.Add(new SqlParameter("@Id", id));
+                    cmd.Parameters.Add(new SqlParameter("@id", id));
 
                     SqlDataReader reader = cmd.ExecuteReader();
 
@@ -87,17 +96,17 @@ namespace StudentExercisesMVC.Controllers
 
                     while (reader.Read())
                     {
-                        Student student = new Student
+                        student = new Student
                         {
                             Id = reader.GetInt32(reader.GetOrdinal("Id")),
                             FirstName = reader.GetString(reader.GetOrdinal("FirstName")),
                             LastName = reader.GetString(reader.GetOrdinal("LastName")),
                             SlackHandle = reader.GetString(reader.GetOrdinal("SlackHandle")),
                             CohortId = reader.GetInt32(reader.GetOrdinal("CohortId")),
-                            cohort = new Cohort
+                            Cohort = new Cohort
                             {
                                 Id = reader.GetInt32(reader.GetOrdinal("CohortId")),
-                                Name = reader.GetString(reader.GetOrdinal("Name"))
+                                Name = reader.GetString(reader.GetOrdinal("CohortName"))
                             }
                         }; 
                     }
@@ -106,106 +115,105 @@ namespace StudentExercisesMVC.Controllers
                 }
             }
         }
+		/*
+	   // GET: Students/Create
+	   public ActionResult Create()
+	   {
+		   {
+			   StudentCreateViewModel viewModel =
+				   new StudentCreateViewModel(_config.GetConnectionString("DefaultConnection"));
+			   return View(viewModel);
+		   } 
+	   }
 
-        // GET: Students/Create
-        public ActionResult Create()
-        {
-            {
-                StudentCreateViewModel viewModel =
+	   // POST: Students/Create
+	   [HttpPost]
+	   [ValidateAntiForgeryToken]
+	   public ActionResult Create(IFormCollection collection)
+	   {
+		   try
+		   {
+			   using (SqlConnection conn = Connection)
+			   {
+				   conn.Open();
+				   using (SqlCommand cmd = conn.CreateCommand())
+				   {
+					   cmd.CommandText = @"INSERT INTO student (firstname, lastname, slackhandle, cohortid)
+										   VALUES (@firstname, @lastname, @slackhandle, @cohortid)";
+					   cmd.Parameters.Add(new SqlParameter("@firstname", viewModel.Student.FirstName));
+					   cmd.Parameters.Add(new SqlParameter("@lastname", viewModel.Student.LastName));
+					   cmd.Parameters.Add(new SqlParameter("@slackhandle", viewModel.Student.SlackHandle));
+					   cmd.Parameters.Add(new SqlParameter("@cohortid", viewModel.Student.CohortId));
 
-                    new StudentCreateViewModel(_config.GetConnectionString("DefaultConnection"));
-                return View(viewModel);
-            } 
-        }
+					   cmd.ExecuteNonQuery();
 
-        // POST: Students/Create
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public ActionResult Create(IFormCollection collection)
-        {
-            try
-            {
-                using (SqlConnection conn = Connection)
-                {
-                    conn.Open();
-                    using (SqlCommand cmd = conn.CreateCommand())
-                    {
-                        cmd.CommandText = @"INSERT INTO student (firstname, lastname, slackhandle, cohortid)
-                                            VALUES (@firstname, @lastname, @slackhandle, @cohortid)";
-                        cmd.Parameters.Add(new SqlParameter("@firstname", viewModel.Student.FirstName));
-                        cmd.Parameters.Add(new SqlParameter("@lastname", viewModel.Student.LastName));
-                        cmd.Parameters.Add(new SqlParameter("@slackhandle", viewModel.Student.SlackHandle));
-                        cmd.Parameters.Add(new SqlParameter("@cohortid", viewModel.Student.CohortId));
+					   return RedirectToAction(nameof(Index));
+				   }
+			   }
+		   }
+		   catch
+		   {
+			   viewModel.Cohorts = GetAllCohorts(),
+			   return View(viewModel);
+		   };
+	   }
+		
+		// GET: Students/Edit/5
+		public ActionResult Edit(int id)
+		{
+			Student student = GetStudentById(id);
+			if (student == null)
+			{
+				return NotFound();
+			}
 
-                        cmd.ExecuteNonQuery();
+			StudentEditViewModel viewModel = new StudentEditViewModel
+			{
+				Cohorts = GetAllCohorts(),
+				Student = student
+			};
 
-                        return RedirectToAction(nameof(Index));
-                    }
-                }
-            }
-            catch
-            {
-                viewModel.Cohorts = GetAllCohorts(),
-                return View(viewModel);
-            };
-        }
+			return View(viewModel);
+		}
 
-        // GET: Students/Edit/5
-        public ActionResult Edit(int id)
-        {
-            Student student = GeteStudentById(id);
-            if (student == null)
-            {
-                return NotFound();
-            }
+		// POST: Students/Edit/5
+		[HttpPost]
+		[ValidateAntiForgeryToken]
+		public ActionResult Edit(int id, IFormCollection collection)
+		{
+			try
+			{
+				using (SqlConnection conn = Connection)
+				{
+					conn.Open();
+					using (SqlCommand cmd = conn.CreateCommand())
+					{
+						cmd.CommandText = @"UPDATE Student
+											   SET firstname = @firstname,lastname = @lastname,
+												   slackhandle = @slackhandle, cohortid = @cohortid
+											 WHERE id = @id";
+						cmd.Parameters.Add(new SqlParameter("@firstname", ViewModel.Student.FirstName));
+						cmd.Parameters.Add(new SqlParameter("@lastname", ViewModel.Student.LastName));
+						cmd.Parameters.Add(new SqlParameter("@slackhandle", ViewModel.Student.SlackHandle));
+						cmd.Parameters.Add(new SqlParameter("@cohortid", ViewModel.Student.CohortId));
+						cmd.Parameters.Add(new SqlParameter("@id", id));
 
-            StudentEditViewModel viewModel = new StudentEditViewModel
-            {
-                Cohorts = GetAllCohorts(),
-                Student = student
-            };
+						cmd.ExecuteNonQuery();
 
-            return View(viewModel);
-        }
+						return RedirectToAction(nameof(Index));
+					}
+				}
+			}
+			catch
+			{
+				ViewModel.Cohorts = GetAllCohorts();
+				return View(viewModel);
+			}
+		}
 
-        // POST: Students/Edit/5
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public ActionResult Edit(int id, IFormCollection collection)
-        {
-            try
-            {
-                using (SqlConnection conn = Connection)
-                {
-                    conn.Open();
-                    using (SqlCommand cmd = conn.CreateCommand())
-                    {
-                        cmd.CommandText = @"UPDATE Student
-                                               SET firstname = @firstname,lastname = @lastname,
-                                                   slackhandle = @slackhandle, cohortid = @cohortid
-                                             WHERE id = @id";
-                        cmd.Parameters.Add(new SqlParameter("@firstname", ViewModel.Student.FirstName));
-                        cmd.Parameters.Add(new SqlParameter("@lastname", ViewModel.Student.LastName));
-                        cmd.Parameters.Add(new SqlParameter("@slackhandle", ViewModel.Student.SlackHandle));
-                        cmd.Parameters.Add(new SqlParameter("@cohortid", ViewModel.Student.CohortId));
-                        cmd.Parameters.Add(new SqlParameter("@id", id));
-
-                        cmd.ExecuteNonQuery();
-
-                        return RedirectToAction(nameof(Index));
-                    }
-                }
-            }
-            catch
-            {
-                ViewModel.Cohorts = GetAllCohorts();
-                return View(viewModel);
-            }
-        }
-
-        // GET: Students/Delete/5
-        public ActionResult Delete(int id)
-        {
+		// GET: Students/Delete/5
+		public ActionResult Delete(int id)
+		{
 			Student student = GetStudentById(id);
 			if (student == null)
 			{
@@ -215,15 +223,15 @@ namespace StudentExercisesMVC.Controllers
 			{
 				return View(student);
 			}
-        }
+		}
 
-        // POST: Students/Delete/5
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public ActionResult Delete(int id, Student student)
-        {
-            try
-            {
+		// POST: Students/Delete/5
+		[HttpPost]
+		[ValidateAntiForgeryToken]
+		public ActionResult Delete(int id, Student student)
+		{
+			try
+			{
 				using (SqlConnection conn = Connection)
 				{
 					conn.Open();
@@ -238,11 +246,11 @@ namespace StudentExercisesMVC.Controllers
 					}
 				}
 			}
-            catch
-            {
-                return View(student);
-            }
-        }
+			catch
+			{
+				return View(student);
+			}
+		}
 
 		// GetStudentById Method:
 		private Student GetStudentById(int id)
@@ -304,10 +312,9 @@ namespace StudentExercisesMVC.Controllers
 						});
 					}
 					reader.Close();
-
 					return cohorts;
 				}
 			}
-		}
-    }
+		}  */
+	}
 }

@@ -10,11 +10,12 @@ namespace StudentExercisesMVC.Models
 	{
 		public int Id { get; set; }
 
+		[Required]
 		[StringLength(10, MinimumLength = 3)]
 		public string Name { get; set; }
 
-		public List<Student> Students { get; set } = new List<Student>();
+		public List<Student> Students { get; set; } = new List<Student>();
 
-		public List<Instructor> Instructors { get; set } = new List<Instructor>();
+		public List<Instructor> Instructors { get; set; } = new List<Instructor>();
 	}
 }
