@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using StudentExercisesMVC.Models;
+using StudentExercisesMVC.Models.ViewModels;
 //using StudentExercisesMVC.Models.ViewModels;
 
 
@@ -115,7 +116,7 @@ namespace StudentExercisesMVC.Controllers
                 }
             }
         }
-		/*
+		
 	   // GET: Students/Create
 	   public ActionResult Create()
 	   {
@@ -129,7 +130,7 @@ namespace StudentExercisesMVC.Controllers
 	   // POST: Students/Create
 	   [HttpPost]
 	   [ValidateAntiForgeryToken]
-	   public ActionResult Create(IFormCollection collection)
+	   public ActionResult Create(StudentCreateViewModel viewModel)
 	   {
 		   try
 		   {
@@ -153,11 +154,37 @@ namespace StudentExercisesMVC.Controllers
 		   }
 		   catch
 		   {
-			   viewModel.Cohorts = GetAllCohorts(),
-			   return View(viewModel);
+				viewModel.Cohorts = GetAllCohorts();
+			    return View(viewModel);
 		   };
 	   }
-		
+	   private List<Cohort>	GetAllCohorts()
+	   {
+			using (SqlConnection conn = Connection)
+			{
+				conn.Open();
+				using (SqlCommand cmd = conn.CreateCommand())
+				{
+					cmd.CommandText = @"SELECT id, name from Cohort;";
+					SqlDataReader reader = cmd.ExecuteReader();
+
+					List<Cohort> cohorts = new List<Cohort>();
+
+					while (reader.Read())
+					{
+						cohorts.Add(new Cohort
+						{
+							Id = reader.GetInt32(reader.GetOrdinal("Id")),
+							Name = reader.GetString(reader.GetOrdinal("Name"))
+						});
+					}
+					reader.Close();
+
+					return cohorts;
+				}
+			}
+		}
+		/*
 		// GET: Students/Edit/5
 		public ActionResult Edit(int id)
 		{
