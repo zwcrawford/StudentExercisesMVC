@@ -182,8 +182,8 @@ namespace StudentExercisesMVC.Controllers
 				}
 			}
 		}
-		
-		// GET: Students/Edit/5
+		// We need to get the student first and then do a POST to submit the changes.
+		// GET: STUDENT/EDIT/{id}
 		public ActionResult Edit(int id)
 		{
 			Student student = GetStudentById(id);
@@ -201,7 +201,7 @@ namespace StudentExercisesMVC.Controllers
 			return View(viewModel);
 		}
 
-		// POST: Students/{id}
+		// POST: STUDENT/EDIT/{id}
 		[HttpPost]
 		[ValidateAntiForgeryToken]
 		public ActionResult Edit(int id, StudentEditViewModel viewModel)
@@ -262,7 +262,8 @@ namespace StudentExercisesMVC.Controllers
 					conn.Open();
 					using (SqlCommand cmd = conn.CreateCommand())
 					{
-						cmd.CommandText = "DELETE FROM Student WHERE id = @id";
+						cmd.CommandText = @"DELETE FROM StudentExercise WHERE StudentId = @id;
+										  DELETE FROM Student WHERE Id = @id;";
 						cmd.Parameters.Add(new SqlParameter("@id", id));
 
 						cmd.ExecuteNonQuery();
