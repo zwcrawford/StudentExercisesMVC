@@ -8,8 +8,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using StudentExercisesMVC.Models;
 using StudentExercisesMVC.Models.ViewModels;
-//using StudentExercisesMVC.Models.ViewModels;
-
 
 namespace StudentExercisesMVC.Controllers
 {
@@ -30,7 +28,7 @@ namespace StudentExercisesMVC.Controllers
             }
         }
 
-        //  GET STUDENT
+        //  GET STUDENTS
         public ActionResult Index()
         {
             using (SqlConnection conn = Connection)
@@ -71,7 +69,7 @@ namespace StudentExercisesMVC.Controllers
             }   
         }
 		
-        // GET STUDENT/DETAILS/{id}
+        // GET STUDENT/DETAILS
         public ActionResult Details(int id)
         {
             using (SqlConnection conn = Connection)
@@ -117,7 +115,7 @@ namespace StudentExercisesMVC.Controllers
             }
         }
 		
-	   // GET: Students/Create
+	   // GET: STUDENT/CREATE
 	   public ActionResult Create()
 	   {
 		   {
@@ -184,7 +182,7 @@ namespace StudentExercisesMVC.Controllers
 				}
 			}
 		}
-		/*
+		
 		// GET: Students/Edit/5
 		public ActionResult Edit(int id)
 		{
@@ -203,10 +201,10 @@ namespace StudentExercisesMVC.Controllers
 			return View(viewModel);
 		}
 
-		// POST: Students/Edit/5
+		// POST: Students/{id}
 		[HttpPost]
 		[ValidateAntiForgeryToken]
-		public ActionResult Edit(int id, IFormCollection collection)
+		public ActionResult Edit(int id, StudentEditViewModel viewModel)
 		{
 			try
 			{
@@ -219,10 +217,10 @@ namespace StudentExercisesMVC.Controllers
 											   SET firstname = @firstname,lastname = @lastname,
 												   slackhandle = @slackhandle, cohortid = @cohortid
 											 WHERE id = @id";
-						cmd.Parameters.Add(new SqlParameter("@firstname", ViewModel.Student.FirstName));
-						cmd.Parameters.Add(new SqlParameter("@lastname", ViewModel.Student.LastName));
-						cmd.Parameters.Add(new SqlParameter("@slackhandle", ViewModel.Student.SlackHandle));
-						cmd.Parameters.Add(new SqlParameter("@cohortid", ViewModel.Student.CohortId));
+						cmd.Parameters.Add(new SqlParameter("@firstname", viewModel.Student.FirstName));
+						cmd.Parameters.Add(new SqlParameter("@lastname", viewModel.Student.LastName));
+						cmd.Parameters.Add(new SqlParameter("@slackhandle", viewModel.Student.SlackHandle));
+						cmd.Parameters.Add(new SqlParameter("@cohortid", viewModel.Student.CohortId));
 						cmd.Parameters.Add(new SqlParameter("@id", id));
 
 						cmd.ExecuteNonQuery();
@@ -233,7 +231,7 @@ namespace StudentExercisesMVC.Controllers
 			}
 			catch
 			{
-				ViewModel.Cohorts = GetAllCohorts();
+				viewModel.Cohorts = GetAllCohorts();
 				return View(viewModel);
 			}
 		}
@@ -301,15 +299,15 @@ namespace StudentExercisesMVC.Controllers
 					{
 						student = new Student
 						{
-							Id = reader.GetInt32(reader.GetOrdinal("Id")),
+							Id = reader.GetInt32(reader.GetOrdinal("StudentId")),
 							FirstName = reader.GetString(reader.GetOrdinal("FirstName")),
 							LastName = reader.GetString(reader.GetOrdinal("LastName")),
 							SlackHandle = reader.GetString(reader.GetOrdinal("SlackHandle")),
 							CohortId = reader.GetInt32(reader.GetOrdinal("CohortId")),
-							cohort = new Cohort
+							Cohort = new Cohort
 							{
 								Id = reader.GetInt32(reader.GetOrdinal("CohortId")),
-								Name = reader.GetString(reader.GetOrdinal("Name"))
+								Name = reader.GetString(reader.GetOrdinal("CohortName"))
 							}
 						};
 					}
@@ -318,30 +316,5 @@ namespace StudentExercisesMVC.Controllers
 				}
 			}
 		}
-		private List<Cohort> GetAllCohorts()
-		{
-			using (SqlConnection conn = Connection)
-			{
-				conn.Open();
-				using (SqlCommand cmd = conn.CreateCommand())
-				{
-					cmd.CommandText = @"SELECT id, name FROM Cohort";
-					SqlDataReader reader = cmd.ExecuteReader();
-
-					List<Cohort> cohorts = new List<Cohort>();
-
-					while (reader.Read())
-					{
-						cohorts.Add(new Cohort
-						{
-							Id = reader.GetInt32(reader.GetOrdinal("Id")),
-							Name = reader.GetString(reader.GetOrdinal("name"))
-						});
-					}
-					reader.Close();
-					return cohorts;
-				}
-			}
-		}  */
 	}
 }
