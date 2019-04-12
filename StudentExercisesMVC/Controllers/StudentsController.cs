@@ -182,7 +182,7 @@ namespace StudentExercisesMVC.Controllers
 				}
 			}
 		}
-		// We need to get the student first and then do a POST to submit the changes.
+		// We need to GET the student first and then do a POST to submit the changes.
 		// GET: STUDENT/EDIT/{id}
 		public ActionResult Edit(int id)
 		{
