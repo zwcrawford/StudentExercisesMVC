@@ -58,14 +58,77 @@ namespace StudentExercisesMVC.Controllers
 			}
 		}
 
-		// GET: Cohorts/Details/5
+		// GET: COHORTS/DETAILS/5
 		public ActionResult Details(int id)
-        {
-            return View();
-        }
+		{
+			using (SqlConnection conn = Connection)
+			{
+				conn.Open();
+				using (SqlCommand cmd = conn.CreateCommand())
+				{
+					cmd.CommandText =
+					@"
+                        SELECT c.Id AS CohortId, c.Name AS CohortName, 
+									s.id AS StudentId, s.FirstName AS StudentFirstName,
+									s.LastName AS StudentLastName, s.SlackHandle AS StudentSlackHandle,
+										i.Id AS InstructorId, i.FirstName AS InstructorFirstName,
+										i.LastName AS InstructorLastName, i.SlackHandle AS InstructorSlackHandle
+                          FROM Student s
+                                 LEFT JOIN Cohort c ON c.Id = s.CohortId
+                                 LEFT JOIN Instructor i ON c.Id = i.CohortId
+                         WHERE c.Id = @id";
+					cmd.Parameters.Add(new SqlParameter("@id", id));
 
-        // GET: Cohorts/Create
-        public ActionResult Create()
+					SqlDataReader reader = cmd.ExecuteReader();
+
+					Cohort cohort = null;
+
+					while (reader.Read())
+					{
+						if (cohort == null)
+						{
+							cohort = new Cohort
+							{
+								Id = reader.GetInt32(reader.GetOrdinal("CohortId")),
+								Name = reader.GetString(reader.GetOrdinal("CohortName")),
+							};
+						}
+						if (!reader.IsDBNull(reader.GetOrdinal("CohortId")))
+						{
+							if (!reader.IsDBNull(reader.GetOrdinal("StudentId")))
+							{
+								if (!cohort.Students.Exists(stu => stu.Id == reader.GetInt32(reader.GetOrdinal("StudentId"))))
+								{
+									cohort.Students.Add(new Student
+									{
+										Id = reader.GetInt32(reader.GetOrdinal("StudentId")),
+										FirstName = reader.GetString(reader.GetOrdinal("StudentFirstName")),
+										LastName = reader.GetString(reader.GetOrdinal("StudentLastName")),
+									});
+								}
+							}
+							if (!reader.IsDBNull(reader.GetOrdinal("InstructorId")))
+							{
+								if (!cohort.Instructors.Exists(ins => ins.Id == reader.GetInt32(reader.GetOrdinal("InstructorId"))))
+								{
+									cohort.Instructors.Add(new Instructor
+									{
+										Id = reader.GetInt32(reader.GetOrdinal("InstructorId")),
+										FirstName = reader.GetString(reader.GetOrdinal("InstructorFirstName")),
+										LastName = reader.GetString(reader.GetOrdinal("InstructorLastName")),
+									});
+								}
+							}
+						}
+					};
+					reader.Close();
+					return View(cohort);
+				}
+			}
+		}
+
+		// GET: Cohorts/Create
+		public ActionResult Create()
         {
             return View();
         }
