@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
+using StudentExercisesMVC.Models;
 
 namespace StudentExercisesMVC.Controllers
 {
@@ -26,13 +27,39 @@ namespace StudentExercisesMVC.Controllers
 			}
 		}
 		// GET COHORTS
-		public ActionResult Index()
-        {
-            return View();
-        }
 
-        // GET: Cohorts/Details/5
-        public ActionResult Details(int id)
+		// When adding the View for an Index, do not make a folder first. Right click the method.
+		// View Name will be Index, GET will use a List template, and then pick the class from dropdown.
+		public ActionResult Index()
+		{
+			using (SqlConnection conn = Connection)
+			{
+				conn.Open();
+				using (SqlCommand cmd = conn.CreateCommand())
+				{
+					cmd.CommandText = @"SELECT c.Id AS CohortId, c.Name
+										  FROM Cohort c;";
+
+					SqlDataReader reader = cmd.ExecuteReader();
+					List<Cohort> cohorts = new List<Cohort>();
+
+					while (reader.Read())
+					{
+						Cohort cohort = new Cohort
+						{
+							Id = reader.GetInt32(reader.GetOrdinal("CohortId")),
+							Name = reader.GetString(reader.GetOrdinal("Name")), 
+						};
+						cohorts.Add(cohort);
+					}
+					reader.Close();
+					return View(cohorts);
+				}
+			}
+		}
+
+		// GET: Cohorts/Details/5
+		public ActionResult Details(int id)
         {
             return View();
         }
