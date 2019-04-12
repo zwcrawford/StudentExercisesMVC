@@ -73,8 +73,8 @@ namespace StudentExercisesMVC.Controllers
 									s.LastName AS StudentLastName, s.SlackHandle AS StudentSlackHandle,
 										i.Id AS InstructorId, i.FirstName AS InstructorFirstName,
 										i.LastName AS InstructorLastName, i.SlackHandle AS InstructorSlackHandle
-                          FROM Student s
-                                 LEFT JOIN Cohort c ON c.Id = s.CohortId
+                          FROM Cohort c
+                                 LEFT JOIN Student s ON c.Id = s.CohortId
                                  LEFT JOIN Instructor i ON c.Id = i.CohortId
                          WHERE c.Id = @id";
 					cmd.Parameters.Add(new SqlParameter("@id", id));
@@ -126,32 +126,75 @@ namespace StudentExercisesMVC.Controllers
 				}
 			}
 		}
-
+		/*
 		// GET: Cohorts/Create
 		public ActionResult Create()
         {
-            return View();
-        }
+			CohortCreateViewModel viewModel =
+					new CohortCreateViewModel(_config.GetConnectionString("DefaultConnection"));
+			return View(viewModel);
+		}
 
         // POST: Cohorts/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Create(IFormCollection collection)
-        {
-            try
-            {
-                // TODO: Add insert logic here
+		public ActionResult Create(CohortCreateViewModel viewModel)
+		{
+			try
+			{
+				using (SqlConnection conn = Connection)
+				{
+					conn.Open();
+					using (SqlCommand cmd = conn.CreateCommand())
+					{
+						cmd.CommandText = @"INSERT INTO student (firstname, lastname, slackhandle, cohortid)
+										   VALUES (@firstname, @lastname, @slackhandle, @cohortid)";
+						cmd.Parameters.Add(new SqlParameter("@firstname", viewModel.Student.FirstName));
+						cmd.Parameters.Add(new SqlParameter("@lastname", viewModel.Student.LastName));
+						cmd.Parameters.Add(new SqlParameter("@slackhandle", viewModel.Student.SlackHandle));
+						cmd.Parameters.Add(new SqlParameter("@cohortid", viewModel.Student.CohortId));
 
-                return RedirectToAction(nameof(Index));
-            }
-            catch
-            {
-                return View();
-            }
-        }
+						cmd.ExecuteNonQuery();
 
-        // GET: Cohorts/Edit/5
-        public ActionResult Edit(int id)
+						return RedirectToAction(nameof(Index));
+					}
+				}
+			}
+			catch
+			{
+				viewModel.Cohorts = GetAllCohorts();
+				return View(viewModel);
+			};
+		}
+		private List<Cohort> GetAllCohorts()
+		{
+			using (SqlConnection conn = Connection)
+			{
+				conn.Open();
+				using (SqlCommand cmd = conn.CreateCommand())
+				{
+					cmd.CommandText = @"SELECT id, name from Cohort;";
+					SqlDataReader reader = cmd.ExecuteReader();
+
+					List<Cohort> cohorts = new List<Cohort>();
+
+					while (reader.Read())
+					{
+						cohorts.Add(new Cohort
+						{
+							Id = reader.GetInt32(reader.GetOrdinal("Id")),
+							Name = reader.GetString(reader.GetOrdinal("Name"))
+						});
+					}
+					reader.Close();
+
+					return cohorts;
+				}
+			}
+		}
+
+		// GET: Cohorts/Edit/5
+		public ActionResult Edit(int id)
         {
             return View();
         }
@@ -194,6 +237,6 @@ namespace StudentExercisesMVC.Controllers
             {
                 return View();
             }
-        }
+        } */
     }
 }
