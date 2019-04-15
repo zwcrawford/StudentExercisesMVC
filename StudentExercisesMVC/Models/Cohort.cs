@@ -11,7 +11,7 @@ namespace StudentExercisesMVC.Models
 		public int Id { get; set; }
 
 		[Required]
-		[StringLength(10, MinimumLength = 3)]
+		[StringLength(30, MinimumLength = 2)]
 		public string Name { get; set; }
 
 		public List<Student> Students { get; set; } = new List<Student>();
