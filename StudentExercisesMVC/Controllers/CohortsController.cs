@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using StudentExercisesMVC.Models;
+using StudentExercisesMVC.Models.ViewModels;
 
 namespace StudentExercisesMVC.Controllers
 {
@@ -126,19 +127,17 @@ namespace StudentExercisesMVC.Controllers
 				}
 			}
 		}
-		/*
+		
 		// GET: Cohorts/Create
 		public ActionResult Create()
         {
-			CohortCreateViewModel viewModel =
-					new CohortCreateViewModel(_config.GetConnectionString("DefaultConnection"));
-			return View(viewModel);
+			return View();
 		}
 
         // POST: Cohorts/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
-		public ActionResult Create(CohortCreateViewModel viewModel)
+		public ActionResult Create(Cohort Cohort)
 		{
 			try
 			{
@@ -147,12 +146,10 @@ namespace StudentExercisesMVC.Controllers
 					conn.Open();
 					using (SqlCommand cmd = conn.CreateCommand())
 					{
-						cmd.CommandText = @"INSERT INTO student (firstname, lastname, slackhandle, cohortid)
-										   VALUES (@firstname, @lastname, @slackhandle, @cohortid)";
-						cmd.Parameters.Add(new SqlParameter("@firstname", viewModel.Student.FirstName));
-						cmd.Parameters.Add(new SqlParameter("@lastname", viewModel.Student.LastName));
-						cmd.Parameters.Add(new SqlParameter("@slackhandle", viewModel.Student.SlackHandle));
-						cmd.Parameters.Add(new SqlParameter("@cohortid", viewModel.Student.CohortId));
+						cmd.CommandText = @"INSERT INTO cohort (name)
+										   VALUES (@name)";
+						
+						cmd.Parameters.Add(new SqlParameter("@name", Cohort.Name)); 
 
 						cmd.ExecuteNonQuery();
 
@@ -162,8 +159,7 @@ namespace StudentExercisesMVC.Controllers
 			}
 			catch
 			{
-				viewModel.Cohorts = GetAllCohorts();
-				return View(viewModel);
+				return View(Cohort);
 			};
 		}
 		private List<Cohort> GetAllCohorts()
@@ -237,6 +233,6 @@ namespace StudentExercisesMVC.Controllers
             {
                 return View();
             }
-        } */
+        }
     }
 }
