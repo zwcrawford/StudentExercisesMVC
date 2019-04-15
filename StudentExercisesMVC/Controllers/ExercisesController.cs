@@ -1,22 +1,64 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data.SqlClient;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
+using StudentExercisesMVC.Models;
 
 namespace StudentExercisesMVC.Controllers
 {
     public class ExercisesController : Controller
     {
-        // GET: Exercises
-        public ActionResult Index()
-        {
-            return View();
-        }
+		private readonly IConfiguration _config;
 
-        // GET: Exercises/Details/5
-        public ActionResult Details(int id)
+		public ExercisesController(IConfiguration config)
+		{
+			_config = config;
+		}
+
+		public SqlConnection Connection
+		{
+			get
+			{
+				return new SqlConnection(_config.GetConnectionString("DefaultConnection"));
+			}
+		}
+
+		// GET: EXERCISES
+		public ActionResult Index()
+		{
+			using (SqlConnection conn = Connection)
+			{
+				conn.Open();
+				using (SqlCommand cmd = conn.CreateCommand())
+				{
+					cmd.CommandText = @"SELECT e.Id AS ExerciseId, e.Name, e.Language
+										  FROM Exercise e;";
+
+					SqlDataReader reader = cmd.ExecuteReader();
+					List<Exercise> exercises = new List<Exercise>();
+
+					while (reader.Read())
+					{
+						Exercise exercise = new Exercise
+						{
+							Id = reader.GetInt32(reader.GetOrdinal("ExerciseId")),
+							Name = reader.GetString(reader.GetOrdinal("Name")),
+							Language = reader.GetString(reader.GetOrdinal("Language")),
+						};
+						exercises.Add(exercise);
+					}
+					reader.Close();
+					return View(exercises);
+				}
+			}
+		}
+
+		// GET: Exercises/Details/5
+		public ActionResult Details(int id)
         {
             return View();
         }
